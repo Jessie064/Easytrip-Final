@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }} — Monitor{% endblock %}
+
+{% block content %}
+<div class="monitor-wrap">
+
+    <!-- Header -->
+    <div class="monitor-header">
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <a href="{% url 'monitor_dashboard' %}" style="color:var(--text-muted);font-size:0.9rem;text-decoration:none;">← Monitor</a>
+            <span style="color:var(--border);">/</span>
+            <div class="user-avatar-lg">{{ profile_user.username|slice:":1"|upper }}</div>
+            <div>
+                <h1 style="font-size:1.8rem;margin:0;">{{ profile_user.username }}</h1>
+                <p style="color:var(--text-muted);font-size:0.88rem;margin:2px 0 0;">{{ profile_user.email|default:"No email" }}</p>
+            </div>
+            {% if profile_user.is_staff %}<span class="role-badge staff" style="font-size:0.78rem;padding:3px 10px;">Staff</span>{% endif %}
+            {% if profile_user.is_superuser %}<span class="role-badge super" style="font-size:0.78rem;padding:3px 10px;">Superuser</span>{% endif %}
+        </div>
+        <a href="{% url 'monitor_dashboard' %}" class="btn btn-outline btn-sm">Back to Monitor</a>
+    </div>
+
+    <!-- User Info Cards -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1.25rem;margin-bottom:2rem;">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#00A99D,#007a72);">✈️</div>
+            <div><p class="stat-label">Total Trips</p><p class="stat-value">{{ trip_count }}</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#667eea,#764ba2);">📅</div>
+            <div><p class="stat-label">Date Joined</p><p class="stat-value" style="font-size:1rem;">{{ profile_user.date_joined|date:"M d, Y" }}</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f093fb,#f5576c);">🕐</div>
+            <div><p class="stat-label">Last Login</p><p class="stat-value" style="font-size:1rem;">{{ profile_user.last_login|date:"M d, Y"|default:"Never" }}</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">✅</div>
+            <div><p class="stat-label">Account Status</p><p class="stat-value" style="font-size:1rem;">{% if profile_user.is_active %}Active{% else %}Inactive{% endif %}</p></div>
+        </div>
+    </div>
+
+    <!-- Trips List -->
+    <div class="monitor-card">
+        <div class="monitor-card-header">
+            <h2>🗺️ All Trips by {{ profile_user.username }}</h2>
+            <span class="monitor-badge">{{ trip_count }} trip{{ trip_count|pluralize }}</span>
+        </div>
+
+        {% if trips %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;padding:1.5rem;">
+            {% for trip in trips %}
+            <div style="border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--bg);transition:box-shadow 0.2s;" onmouseover="this.style.boxShadow='0 4px 20px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow='none'">
+                {% if trip.image_url %}
+                <img src="{{ trip.image_url }}" alt="{{ trip.destination }}" style="width:100%;height:140px;object-fit:cover;display:block;">
+                {% endif %}
+                <div style="padding:1rem 1.25rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+                        <h3 style="margin:0;font-size:1rem;font-family:var(--font-sans);font-weight:700;">{{ trip.destination }}</h3>
+                        <span style="background:var(--primary-light);color:var(--primary);font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;margin-left:8px;">{{ trip.trip_length }}d</span>
+                    </div>
+                    <p style="margin:0 0 0.75rem;font-size:0.8rem;color:var(--text-muted);">{{ trip.overview|truncatechars:90 }}</p>
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:0.75rem;">
+                        {% for interest in trip.interests %}
+                        <span style="background:var(--border);color:var(--text-muted);font-size:0.68rem;padding:2px 8px;border-radius:12px;">{{ interest }}</span>
+                        {% endfor %}
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--text-muted);border-top:1px solid var(--border);padding-top:0.75rem;">
+                        <span>📅 {{ trip.created_at|date:"M d, Y" }}</span>
+                        {% if trip.budget_total %}
+                        <span>💰 {{ trip.budget_currency }} {{ trip.budget_total|floatformat:0 }}</span>
+                        {% endif %}
+                        <a href="{% url 'trip_detail' trip.id %}" class="monitor-link" target="_blank">View →</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div style="text-align:center;padding:3rem;color:var(--text-muted);">
+            <p style="font-size:2rem;margin-bottom:0.5rem;">🗺️</p>
+            <p>This user has no trips yet.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+.monitor-wrap { max-width: 1400px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+.monitor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 1rem; }
+.monitor-header h1 { font-size: 1.8rem; }
+.user-avatar-lg { width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 700; flex-shrink: 0; }
+.stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px; padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow); }
+.stat-icon { font-size: 1.4rem; width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-label { font-size: 0.75rem; color: var(--text-muted); margin: 0 0 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+.stat-value { font-size: 1.6rem; font-weight: 700; margin: 0; color: var(--text); font-family: var(--font-sans); }
+.monitor-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); }
+.monitor-card-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+.monitor-card-header h2 { font-size: 1rem; margin: 0; font-family: var(--font-sans); font-weight: 700; }
+.monitor-badge { background: var(--primary-light); color: var(--primary); font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+.monitor-link { color: var(--primary); font-weight: 600; text-decoration: none; }
+.monitor-link:hover { text-decoration: underline; }
+.role-badge { display: inline-block; border-radius: 6px; font-weight: 700; }
+.role-badge.staff { background: #e0f2fe; color: #0369a1; }
+.role-badge.super { background: #fef3c7; color: #92400e; }
+@media (max-width: 768px) { .monitor-header { flex-direction: column; align-items: flex-start; } }
+</style>
+{% endblock %}

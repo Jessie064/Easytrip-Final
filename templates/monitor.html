@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Monitor — Easytrip Staff{% endblock %}
+
+{% block content %}
+<div class="monitor-wrap">
+
+    <!-- Header -->
+    <div class="monitor-header">
+        <div>
+            <h1>🛡️ Monitoring Dashboard</h1>
+            <p>Staff view — all user activity and trips</p>
+        </div>
+        <div style="display:flex;gap:0.75rem;align-items:center;">
+            <span class="staff-badge">Staff: {{ request.user.username }}</span>
+            <a href="{% url 'home' %}" class="btn btn-outline btn-sm">← Back to Site</a>
+            <a href="/admin/" class="btn btn-primary dark-green-btn btn-sm">Django Admin →</a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="monitor-stats">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#667eea,#764ba2);">👥</div>
+            <div>
+                <p class="stat-label">Total Users</p>
+                <p class="stat-value">{{ total_users }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#00A99D,#007a72);">✈️</div>
+            <div>
+                <p class="stat-label">Total Trips</p>
+                <p class="stat-value">{{ total_trips }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f093fb,#f5576c);">📅</div>
+            <div>
+                <p class="stat-label">Trips Today</p>
+                <p class="stat-value">{{ trips_today }}</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#43e97b,#38f9d7);">📈</div>
+            <div>
+                <p class="stat-label">This Week</p>
+                <p class="stat-value">{{ trips_this_week }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="monitor-grid">
+
+        <!-- Left Column -->
+        <div class="monitor-col">
+
+            <!-- Users Table -->
+            <div class="monitor-card">
+                <div class="monitor-card-header">
+                    <h2>👥 Registered Users</h2>
+                    <span class="monitor-badge">{{ total_users }} total</span>
+                </div>
+                <div class="monitor-table-wrap">
+                    <table class="monitor-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Joined</th>
+                                <th>Last Login</th>
+                                <th>Trips</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in users %}
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <div class="user-avatar">{{ u.username|slice:":1"|upper }}</div>
+                                        <div>
+                                            <p style="margin:0;font-weight:600;font-size:0.88rem;">{{ u.username }}</p>
+                                            {% if u.is_staff %}<span class="role-badge staff">Staff</span>{% endif %}
+                                            {% if u.is_superuser %}<span class="role-badge super">Super</span>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="font-size:0.82rem;color:var(--text-muted);">{{ u.email|default:"—" }}</td>
+                                <td style="font-size:0.82rem;color:var(--text-muted);">{{ u.date_joined|date:"M d, Y" }}</td>
+                                <td style="font-size:0.82rem;color:var(--text-muted);">{{ u.last_login|date:"M d, Y"|default:"Never" }}</td>
+                                <td>
+                                    <span class="trip-count-badge">{{ u.trip_count }}</span>
+                                </td>
+                                <td>
+                                    {% if u.trip_count > 0 %}
+                                    <a href="{% url 'monitor_user_detail' u.id %}" class="monitor-link">View →</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No users yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right Column -->
+        <div class="monitor-col">
+
+            <!-- Popular Destinations -->
+            <div class="monitor-card" style="margin-bottom:1.5rem;">
+                <div class="monitor-card-header">
+                    <h2>🌍 Popular Destinations</h2>
+                    <span class="monitor-badge">Top 10</span>
+                </div>
+                <div style="padding:0.5rem 0;">
+                    {% for dest in popular_destinations %}
+                    <div class="dest-row">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;">
+                            <span class="dest-rank">{{ forloop.counter }}</span>
+                            <span style="font-size:0.9rem;font-weight:500;">{{ dest.destination }}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <div class="dest-bar-wrap">
+                                <div class="dest-bar" style="width:{{ dest.count|floatformat:0 }}0%;max-width:100%;"></div>
+                            </div>
+                            <span style="font-size:0.82rem;font-weight:600;color:var(--primary);min-width:24px;">{{ dest.count }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p style="text-align:center;color:var(--text-muted);padding:1.5rem 0;font-size:0.9rem;">No trips yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Recent Trips -->
+            <div class="monitor-card">
+                <div class="monitor-card-header">
+                    <h2>🗺️ Recent Trips</h2>
+                    <form method="GET" style="display:flex;gap:0.5rem;">
+                        <input type="text" name="q" value="{{ search_q }}" placeholder="Search destination or user…"
+                            style="padding:6px 12px;font-size:0.82rem;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);width:200px;">
+                        <button type="submit" class="btn btn-primary dark-green-btn btn-sm" style="padding:6px 12px;font-size:0.82rem;">Search</button>
+                        {% if search_q %}<a href="{% url 'monitor_dashboard' %}" class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:0.82rem;">✕</a>{% endif %}
+                    </form>
+                </div>
+                <div class="monitor-table-wrap">
+                    <table class="monitor-table">
+                        <thead>
+                            <tr>
+                                <th>Destination</th>
+                                <th>User</th>
+                                <th>Days</th>
+                                <th>Budget</th>
+                                <th>Created</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for trip in trips %}
+                            <tr>
+                                <td>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        {% if trip.image_url %}
+                                        <img src="{{ trip.image_url }}" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;">
+                                        {% endif %}
+                                        <div>
+                                            <p style="margin:0;font-weight:600;font-size:0.88rem;">{{ trip.destination }}</p>
+                                            {% if trip.interests %}
+                                            <p style="margin:0;font-size:0.72rem;color:var(--text-muted);">{{ trip.interests|join:", " }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if trip.user %}
+                                    <a href="{% url 'monitor_user_detail' trip.user.id %}" class="monitor-link">{{ trip.user.username }}</a>
+                                    {% else %}
+                                    <span style="color:var(--text-muted);font-size:0.82rem;">Guest</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-size:0.85rem;font-weight:600;">{{ trip.trip_length }}d</td>
+                                <td style="font-size:0.82rem;color:var(--text-muted);">
+                                    {% if trip.budget_total %}{{ trip.budget_currency }} {{ trip.budget_total|floatformat:0 }}{% else %}—{% endif %}
+                                </td>
+                                <td style="font-size:0.78rem;color:var(--text-muted);">{{ trip.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'trip_detail' trip.id %}" class="monitor-link" target="_blank">View →</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:2rem;">No trips found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+.monitor-wrap { max-width: 1400px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+.monitor-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
+}
+.monitor-header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+.monitor-header p { color: var(--text-muted); font-size: 0.9rem; }
+.staff-badge {
+    background: var(--primary-light); color: var(--primary);
+    padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+}
+.monitor-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem; margin-bottom: 2rem;
+}
+.stat-card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 14px; padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    box-shadow: var(--shadow);
+}
+.stat-icon { font-size: 1.5rem; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-label { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 4px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+.stat-value { font-size: 1.8rem; font-weight: 700; margin: 0; color: var(--text); font-family: var(--font-sans); }
+.monitor-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.5rem; }
+.monitor-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+.monitor-card-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);
+}
+.monitor-card-header h2 { font-size: 1rem; margin: 0; font-family: var(--font-sans); font-weight: 700; }
+.monitor-badge { background: var(--primary-light); color: var(--primary); font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; }
+.monitor-table-wrap { overflow-x: auto; }
+.monitor-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.monitor-table th { padding: 10px 16px; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--bg); }
+.monitor-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.monitor-table tr:last-child td { border-bottom: none; }
+.monitor-table tr:hover td { background: var(--bg); }
+.monitor-link { color: var(--primary); font-size: 0.82rem; font-weight: 600; text-decoration: none; }
+.monitor-link:hover { text-decoration: underline; }
+.user-avatar { width: 30px; height: 30px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; flex-shrink: 0; }
+.role-badge { display: inline-block; font-size: 0.65rem; padding: 1px 6px; border-radius: 4px; font-weight: 700; }
+.role-badge.staff { background: #e0f2fe; color: #0369a1; }
+.role-badge.super { background: #fef3c7; color: #92400e; }
+.trip-count-badge { background: var(--primary-light); color: var(--primary); font-size: 0.78rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+.dest-row { display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 1.25rem; border-bottom: 1px solid var(--border); }
+.dest-row:last-child { border-bottom: none; }
+.dest-rank { width: 22px; height: 22px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; flex-shrink: 0; }
+.dest-bar-wrap { width: 80px; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.dest-bar { height: 100%; background: var(--primary); border-radius: 3px; transition: width 0.5s ease; }
+@media (max-width: 1100px) { .monitor-grid { grid-template-columns: 1fr; } .monitor-stats { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .monitor-stats { grid-template-columns: 1fr 1fr; } .monitor-header { flex-direction: column; gap: 1rem; } }
+</style>
+{% endblock %}

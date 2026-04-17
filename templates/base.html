@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Easytrip — AI Travel Planner{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+
+<body>
+    <!-- Scroll Progress Bar -->
+    <div id="scroll-progress"></div>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <!-- Logo -->
+            <a href="{% url 'home' %}" class="logo">
+                <svg width="140" height="32" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .lp { fill: #00A99D; }
+                        .lt { stroke: #00A99D; fill: none; stroke-linecap: round; }
+                        .lw { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 17px; fill: currentColor; letter-spacing: -0.3px; }
+                    </style>
+                    <line x1="0" y1="15" x2="9" y2="15" class="lt" stroke-width="2" opacity="0.3"/>
+                    <line x1="0" y1="19" x2="6" y2="19" class="lt" stroke-width="1.5" opacity="0.2"/>
+                    <path d="M8 18 L30 6 L23 18 Z" class="lp"/>
+                    <path d="M8 18 L30 6 L23 25 Z" class="lp" opacity="0.6"/>
+                    <path d="M23 18 L23 25 L17 21 Z" fill="#007a72"/>
+                    <text x="36" y="22" class="lw">Easytrip</text>
+                </svg>
+            </a>
+
+            <!-- Nav Links -->
+            <ul class="nav-links">
+                <li><a href="{% url 'home' %}">Home</a></li>
+                <li><a href="{% url 'home' %}#features">How To Book</a></li>
+                <li><a href="{% url 'home' %}#create-trip">Plan Trip</a></li>
+                <li><a href="{% url 'home' %}#explore">Explore</a></li>
+            </ul>
+
+            <!-- Nav Actions -->
+            <div class="nav-actions">
+                <!-- Dark Mode Toggle -->
+                <button class="dark-mode-toggle" id="darkModeToggle" aria-label="Toggle dark mode" title="Toggle dark mode">
+                    <svg id="toggleIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+
+                {% if user.is_authenticated %}
+                <div class="nav-user">
+                    <div class="nav-avatar">{{ user.username|slice:":1"|upper }}</div>
+                    <span class="nav-username">{{ user.username }}</span>
+                </div>
+                <a href="{% url 'dashboard' %}" class="btn btn-primary dark-green-btn btn-sm">Dashboard</a>
+                <a href="{% url 'logout' %}" class="btn btn-ghost btn-sm">Log Out</a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a>
+                <a href="{% url 'signup' %}" class="btn btn-primary dark-green-btn btn-sm">Sign Up Free</a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile Toggle -->
+            <button class="mobile-toggle" aria-label="Toggle navigation">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <!-- Brand -->
+            <div class="footer-brand">
+                <svg width="120" height="28" viewBox="0 0 140 32" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .flp { fill: #00C4B7; }
+                        .flt { stroke: #00C4B7; fill: none; stroke-linecap: round; }
+                        .flw { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 17px; fill: white; letter-spacing: -0.3px; }
+                    </style>
+                    <line x1="0" y1="15" x2="9" y2="15" class="flt" stroke-width="2" opacity="0.3"/>
+                    <line x1="0" y1="19" x2="6" y2="19" class="flt" stroke-width="1.5" opacity="0.2"/>
+                    <path d="M8 18 L30 6 L23 18 Z" class="flp"/>
+                    <path d="M8 18 L30 6 L23 25 Z" class="flp" opacity="0.6"/>
+                    <path d="M23 18 L23 25 L17 21 Z" fill="#007a72"/>
+                    <text x="36" y="22" class="flw">Easytrip</text>
+                </svg>
+                <p style="margin-top:0.75rem;font-size:0.88rem;color:rgba(255,255,255,0.45);line-height:1.6;max-width:220px;">
+                    Plan smarter trips with AI. Free day-by-day itineraries tailored to your interests.
+                </p>
+                <!-- Tech badges -->
+                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:1rem;">
+                    <span style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:0.7rem;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">⚡ Powered by Groq AI</span>
+                    <span style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:0.7rem;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">🗺️ Mapbox</span>
+                    <span style="background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);font-size:0.7rem;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);">🐍 Django</span>
+                </div>
+            </div>
+
+            <!-- Links -->
+            <div class="footer-links">
+                <div class="footer-col">
+                    <h5>Product</h5>
+                    <a href="{% url 'home' %}#features">Features</a>
+                    <a href="{% url 'home' %}#create-trip">Plan a Trip</a>
+                    <a href="{% url 'home' %}#explore">Explore</a>
+                    <a href="{% url 'home' %}">How it works</a>
+                </div>
+                <div class="footer-col">
+                    <h5>Account</h5>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}">Dashboard</a>
+                    {% if user.is_staff %}<a href="{% url 'monitor_dashboard' %}">Monitor</a>{% endif %}
+                    <a href="{% url 'logout' %}">Log Out</a>
+                    {% else %}
+                    <a href="{% url 'login' %}">Log In</a>
+                    <a href="{% url 'signup' %}">Sign Up — Free</a>
+                    {% endif %}
+                </div>
+                <div class="footer-col">
+                    <h5>Info</h5>
+                    <a href="https://github.com/RestlessFrancis/EasyTrip" target="_blank">GitHub</a>
+                    <a href="mailto:frncs4class@gmail.com">Contact</a>
+                    <a href="{% url 'home' %}">FAQ</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="footer-bottom">
+            <p>&copy; {% now "Y" %} Easytrip by SAP. All rights reserved.</p>
+            <p style="color:rgba(255,255,255,0.2);font-size:0.78rem;">Built with ❤️ in Cebu, Philippines 🇵🇭</p>
+        </div>
+    </footer>
+
+    <script>
+        const moonSVG = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+        const sunSVG = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+
+        const toggle = document.getElementById('darkModeToggle');
+        const icon = document.getElementById('toggleIcon');
+        const html = document.documentElement;
+
+        const saved = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-theme', saved);
+        icon.innerHTML = saved === 'dark' ? sunSVG : moonSVG;
+
+        toggle.addEventListener('click', () => {
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+            icon.innerHTML = next === 'dark' ? sunSVG : moonSVG;
+        });
+
+        // Mobile menu
+        document.querySelector('.mobile-toggle').addEventListener('click', function () {
+            document.querySelector('.nav-links').classList.toggle('active');
+            document.querySelector('.nav-actions').classList.toggle('active');
+        });
+    </script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

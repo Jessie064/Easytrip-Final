@@ -1,0 +1,612 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
+<style>
+    .detail-hero { position: relative; height: 400px; width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 2rem; }
+    .detail-hero img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-hero-content { position: absolute; bottom: 0; left: 0; width: 100%; padding: 3rem; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; }
+    .detail-hero-content h1 { color: white; font-size: 3rem; margin-bottom: 0.5rem; }
+    .detail-container { max-width: 1200px; margin: 0 auto; padding: 0 2rem; }
+    .nav-tabs { display: flex; gap: 2rem; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+    .nav-tabs button { background: none; border: none; padding: 1rem 0; font-size: 1rem; font-weight: 500; color: #666; cursor: pointer; position: relative; }
+    .nav-tabs button.active { color: var(--text); }
+    .nav-tabs button.active::after { content: ''; position: absolute; bottom: -1px; left: 0; width: 100%; height: 2px; background-color: var(--primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .detail-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 4rem; }
+    .overview-section h3 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .overview-section p { color: #555; margin-bottom: 2rem; }
+    @media (max-width: 992px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    /* Map container */
+    #map { height: 460px; border-radius: 16px; z-index: 10; position: relative; margin-bottom: 3rem; }
+    #map-small { height: 240px; border-radius: 12px; margin-bottom: 1rem; }
+
+    /* Map style switcher */
+    .map-style-switcher {
+        position: absolute; top: 12px; right: 12px; z-index: 100;
+        display: flex; gap: 6px; background: rgba(255,255,255,0.95);
+        border-radius: 10px; padding: 6px; box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    [data-theme="dark"] .map-style-switcher { background: rgba(30,30,48,0.95); }
+    .map-style-btn {
+        background: none; border: none; cursor: pointer; padding: 5px 10px;
+        border-radius: 7px; font-size: 0.75rem; font-weight: 600;
+        color: var(--text-muted); transition: all 0.2s;
+    }
+    .map-style-btn.active { background: var(--primary); color: white; }
+    .map-style-btn:hover:not(.active) { background: var(--border); }
+
+    /* Spot popup on map */
+    .mapboxgl-popup-content { border-radius: 10px; padding: 10px 14px; font-family: var(--font-sans); font-size: 0.85rem; box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+    .mapboxgl-popup-content strong { display: block; margin-bottom: 2px; color: #1a1a2e; }
+    .mapboxgl-popup-content span { color: #888; font-size: 0.75rem; }
+    .mapboxgl-ctrl-attrib { font-size: 0.65rem; }
+
+    /* Recommended Spots */
+    .rec-category { margin-bottom: 2rem; }
+    .rec-category-title { font-size: 1rem; font-weight: 700; color: var(--text); margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.5rem; }
+    .rec-spots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 0.75rem; }
+    .rec-spot-card {
+        background: var(--card-bg); border: 1px solid var(--border);
+        border-radius: 12px; padding: 0.9rem 1rem;
+        transition: box-shadow 0.18s, transform 0.18s;
+        cursor: pointer;
+    }
+    .rec-spot-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.09); transform: translateY(-2px); border-color: var(--primary); }
+    .rec-spot-card.highlighted { border-color: var(--primary); background: var(--primary-light); }
+    .rec-spot-name { font-size: 0.88rem; font-weight: 600; margin: 0 0 0.3rem 0; line-height: 1.3; color: var(--text); }
+    .rec-spot-type { display: inline-block; font-size: 0.7rem; background: rgba(0,169,157,0.1); color: var(--primary); border-radius: 20px; padding: 2px 8px; font-weight: 500; }
+    .rec-spot-rating { display: inline-block; margin-left: 0.4rem; font-size: 0.78rem; color: #b8860b; font-weight: 600; }
+    .rec-spot-map { display: block; margin-top: 0.45rem; font-size: 0.74rem; color: var(--primary); text-decoration: none; font-weight: 500; }
+
+    /* Itinerary */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .day-block { border: 1px solid var(--border); border-radius: 16px; margin-bottom: 1.25rem; overflow: hidden; background: var(--card-bg); }
+    .day-header { display: flex; align-items: center; justify-content: space-between; padding: 1.1rem 1.5rem; cursor: pointer; background: var(--card-bg); transition: background 0.2s; user-select: none; }
+    .day-header:hover { background: var(--bg); }
+    .day-header-left { display: flex; align-items: center; gap: 1rem; }
+    .day-number-badge { background: var(--primary); color: white; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; flex-shrink: 0; }
+    .day-theme { font-weight: 600; font-size: 1rem; }
+    .day-cost-badge { font-size: 0.78rem; background: var(--primary-light); color: var(--primary); border-radius: 20px; padding: 3px 10px; font-weight: 500; }
+    .day-chevron { transition: transform 0.25s; color: #aaa; font-size: 1rem; }
+    .day-body { display: none; padding: 0 1.5rem 1.5rem; }
+    .day-body.open { display: block; }
+    .period-block { display: flex; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border); }
+    .period-block:last-of-type { border-bottom: none; }
+    .period-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+    .period-info { flex: 1; }
+    .period-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #aaa; margin-bottom: 2px; }
+    .period-activity { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.3rem; }
+    .period-desc { font-size: 0.85rem; color: #666; line-height: 1.5; margin-bottom: 0.4rem; }
+    .period-meta { display: flex; gap: 1rem; font-size: 0.78rem; color: #999; }
+    .local-tip-box { background: #f0f7f2; border-left: 3px solid var(--primary); border-radius: 0 8px 8px 0; padding: 0.75rem 1rem; margin-top: 1rem; font-size: 0.85rem; color: #444; }
+    .local-tip-box strong { color: var(--primary); }
+    [data-theme="dark"] .local-tip-box { background: rgba(0,169,157,0.08); color: #ccc; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-container" style="margin-top: 2rem;">
+
+    <!-- Title -->
+    <div style="margin-bottom: 1.5rem; position: relative; display:flex; align-items:flex-start; justify-content:space-between;">
+        <div>
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.25rem;">{{ trip.title|default:"Trip" }}</h1>
+            <p style="color: var(--text-muted);">AI-Powered Travel Itinerary</p>
+        </div>
+        <a href="{% url 'home' %}" style="color:#aaa;text-decoration:none;font-size:1.5rem;line-height:1;margin-top:4px;">×</a>
+    </div>
+
+    <!-- Large Mapbox Map with style switcher -->
+    <div style="position:relative;">
+        <div id="map"></div>
+        <div class="map-style-switcher">
+            <button class="map-style-btn active" onclick="setMapStyle('streets-v12', this)">🗺 Streets</button>
+            <button class="map-style-btn" onclick="setMapStyle('satellite-streets-v12', this)">🛰 Satellite</button>
+            <button class="map-style-btn" onclick="setMapStyle('outdoors-v12', this)">🏔 Outdoors</button>
+            <button class="map-style-btn" onclick="setMapStyle('dark-v11', this)">🌙 Dark</button>
+        </div>
+    </div>
+
+    <!-- Hero Image -->
+    <div class="detail-hero">
+        <img src="{{ trip.image_url|default:'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=1200' }}" alt="{{ trip.destination }}">
+        <div class="detail-hero-content">
+            <span class="pill-tag" style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.4);">
+                👥 {{ trip.group_size|default:"Travelers" }}
+            </span>
+            <h1>{{ trip.title|default:"Trip" }}</h1>
+            <p style="opacity:0.9;">
+                {{ trip.start_date|date:"M d, Y"|default:"" }}
+                {% if trip.start_date and trip.end_date %} — {% endif %}
+                {{ trip.end_date|date:"M d, Y"|default:"" }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="detail-grid">
+        <div class="main-content">
+
+            <!-- Tabs -->
+            <div class="nav-tabs">
+                <button class="active" onclick="switchTab('overview', this)">Overview</button>
+                <button onclick="switchTab('itinerary', this)">🗓️ Day-by-Day Itinerary</button>
+                {% if trip.interests %}<button onclick="switchTab('recommended', this)">📍 Recommended Places</button>{% endif %}
+            </div>
+
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active overview-section">
+                <h3>Overview</h3>
+                <p>{{ trip.overview }}</p>
+                {% if trip.interests %}
+                <h3>Interests</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:2rem;">
+                    {% for interest in trip.interests %}<span class="pill-tag">{{ interest }}</span>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Itinerary Tab -->
+            <div id="itinerary" class="tab-content overview-section">
+                {% if has_generated %}
+                <div id="itinerary-loaded">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                        <h3 style="margin:0;">Your Itinerary</h3>
+                        <button onclick="startGenerate()" class="btn btn-outline btn-sm" style="border:1px solid var(--border);font-size:0.85rem;">🔄 Regenerate</button>
+                    </div>
+                    <div id="days-container">
+                        {% for day in parsed_days %}{% if day %}
+                        <div class="day-block">
+                            <div class="day-header" onclick="toggleDay(this)">
+                                <div class="day-header-left">
+                                    <div class="day-number-badge">D{{ day.day }}</div>
+                                    <div class="day-theme">{{ day.theme }}</div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:0.75rem;">
+                                    {% if day.estimated_daily_cost %}<span class="day-cost-badge">~{{ day.estimated_daily_cost }}</span>{% endif %}
+                                    <span class="day-chevron">▼</span>
+                                </div>
+                            </div>
+                            <div class="day-body {% if forloop.first %}open{% endif %}">
+                                {% if day.morning %}
+                                <div class="period-block">
+                                    <div class="period-icon" style="background:#fff8e1;">🌅</div>
+                                    <div class="period-info">
+                                        <div class="period-label">Morning</div>
+                                        <div class="period-activity">{{ day.morning.activity }}</div>
+                                        <div class="period-desc">{{ day.morning.description }}</div>
+                                        <div class="period-meta">{% if day.morning.duration %}<span>⏱ {{ day.morning.duration }}</span>{% endif %}{% if day.morning.cost %}<span>💵 {{ day.morning.cost }}</span>{% endif %}</div>
+                                    </div>
+                                </div>{% endif %}
+                                {% if day.afternoon %}
+                                <div class="period-block">
+                                    <div class="period-icon" style="background:#fff3e0;">☀️</div>
+                                    <div class="period-info">
+                                        <div class="period-label">Afternoon</div>
+                                        <div class="period-activity">{{ day.afternoon.activity }}</div>
+                                        <div class="period-desc">{{ day.afternoon.description }}</div>
+                                        <div class="period-meta">{% if day.afternoon.duration %}<span>⏱ {{ day.afternoon.duration }}</span>{% endif %}{% if day.afternoon.cost %}<span>💵 {{ day.afternoon.cost }}</span>{% endif %}</div>
+                                    </div>
+                                </div>{% endif %}
+                                {% if day.evening %}
+                                <div class="period-block">
+                                    <div class="period-icon" style="background:#ede7f6;">🌙</div>
+                                    <div class="period-info">
+                                        <div class="period-label">Evening</div>
+                                        <div class="period-activity">{{ day.evening.activity }}</div>
+                                        <div class="period-desc">{{ day.evening.description }}</div>
+                                        <div class="period-meta">{% if day.evening.duration %}<span>⏱ {{ day.evening.duration }}</span>{% endif %}{% if day.evening.cost %}<span>💵 {{ day.evening.cost }}</span>{% endif %}</div>
+                                    </div>
+                                </div>{% endif %}
+                                {% if day.local_tip %}<div class="local-tip-box"><strong>💡 Local Tip:</strong> {{ day.local_tip }}</div>{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}{% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div id="itinerary-empty" style="text-align:center;padding:3rem 1rem;">
+                    <div style="font-size:3rem;margin-bottom:1rem;">🗓️</div>
+                    <h3 style="margin-bottom:0.5rem;">No itinerary yet</h3>
+                    <p style="color:#888;margin-bottom:1.5rem;">Let AI build a personalised day-by-day plan for <strong>{{ trip.destination }}</strong>.</p>
+                    <button onclick="startGenerate()" class="btn btn-primary dark-green-btn" style="padding:12px 28px;">✨ Generate My Itinerary</button>
+                </div>
+                {% endif %}
+                <div id="itinerary-loading" style="display:none;text-align:center;padding:3rem 1rem;">
+                    <div style="display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;"></div>
+                    <p style="color:#888;font-size:0.95rem;" id="loading-msg">Generating your itinerary…</p>
+                    <p style="color:#bbb;font-size:0.8rem;margin-top:0.5rem;">This may take 10–20 seconds</p>
+                </div>
+                <div id="itinerary-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:1rem 1.25rem;margin-top:1rem;color:#dc2626;font-size:0.9rem;"></div>
+            </div>
+
+            <!-- Recommended Places Tab -->
+            {% if trip.interests %}
+            <div id="recommended" class="tab-content overview-section">
+                <h3>📍 Recommended Places</h3>
+                <p style="color:#888;font-size:0.9rem;margin-bottom:0.5rem;">Real spots in <strong>{{ trip.destination }}</strong> based on your interests. Click any card to highlight it on the map.</p>
+                <p style="color:var(--primary);font-size:0.82rem;margin-bottom:1.5rem;">🗺️ All spots are pinned on the map above</p>
+                <div id="rec-spots-container">
+                    {% if recommended_spots %}
+                        {% for group in recommended_spots %}
+                        <div class="rec-category">
+                            <div class="rec-category-title">
+                                {% if group.category == 'Food' %}🍽️{% elif group.category == 'Nature' %}🌿{% elif group.category == 'History' %}🏛️{% elif group.category == 'Beaches' %}🏖️{% elif group.category == 'Nightlife' %}🎵{% elif group.category == 'Shopping' %}🛍️{% elif group.category == 'Photography' %}📸{% elif group.category == 'Architecture' %}🏗️{% elif group.category == 'Adventure' %}🧗{% elif group.category == 'Art' %}🎨{% elif group.category == 'Wellness' %}🧘{% elif group.category == 'Markets' %}🛒{% endif %}
+                                {{ group.category }}
+                            </div>
+                            <div class="rec-spots-grid">
+                                {% for spot in group.spots %}
+                                <div class="rec-spot-card" onclick="flyToSpot({{ spot.lat|default:'null' }}, {{ spot.lon|default:'null' }}, '{{ spot.name|escapejs }}', '{{ spot.type|escapejs }}')">
+                                    <p class="rec-spot-name">{{ spot.name }}</p>
+                                    <span class="rec-spot-type">{{ spot.type }}</span>
+                                    {% if spot.rating %}<span class="rec-spot-rating">{{ spot.rating }} ★</span>{% endif %}
+                                    {% if spot.lat and spot.lon %}<span class="rec-spot-map">📍 View on map</span>{% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div id="rec-loading" style="text-align:center;padding:2rem;">
+                            <div style="display:inline-block;width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;"></div>
+                            <p style="color:#888;font-size:0.9rem;">Loading recommended spots...</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            {% if trip.budget_total %}
+            <div style="background:var(--card-bg);padding:1.5rem;border-radius:12px;margin-bottom:1rem;border:1px solid var(--border);">
+                <h4 style="margin-bottom:0.75rem;">💰 Budget Plan</h4>
+                <p style="font-size:1.25rem;font-weight:600;color:var(--primary);margin-bottom:0.5rem;">{{ trip.budget_currency }} {{ trip.budget_total|floatformat:0 }}</p>
+                {% if trip.budget_breakdown %}
+                <ul style="font-size:0.85rem;color:#666;list-style:none;padding:0;">
+                    {% for key, val in trip.budget_breakdown.items %}
+                    <li style="padding:0.25rem 0;display:flex;justify-content:space-between;"><span>{{ key|title }}</span><span style="font-weight:600;">{{ trip.budget_currency }} {{ val|floatformat:0 }}</span></li>
+                    {% endfor %}
+                </ul>
+                {% if budget_exceeded %}
+                <p style="font-size:0.82rem;color:#c0392b;background:#fde8e8;padding:0.5rem 0.75rem;border-radius:8px;margin-top:0.75rem;">⚠️ Breakdown ({{ trip.budget_currency }} {{ breakdown_total|floatformat:0 }}) exceeds budget.</p>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Small map -->
+            <div id="map-small"></div>
+
+            <div style="background:var(--card-bg);padding:1.5rem;border-radius:12px;border:1px solid var(--border);">
+                <h4 style="margin-bottom:1rem;">Trip Info</h4>
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">📅 {{ trip.trip_length }} day{{ trip.trip_length|pluralize }}</p>
+                {% if trip.group_size %}<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">👥 {{ trip.group_size }}</p>{% endif %}
+                {% if trip.interests %}<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0.5rem;">❤️ {{ trip.interests|join:", " }}</p>{% endif %}
+                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:0;">📍 {{ trip.destination }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const TRIP_ID = {{ trip.id }};
+    const GENERATE_URL = "{% url 'generate_itinerary' trip.id %}";
+    const CSRF = "{{ csrf_token }}";
+    const MAPBOX_TOKEN = "{{ mapbox_token }}";
+    const TRIP_LNG = parseFloat("{{ trip.longitude|default:'120.9842' }}");
+    const TRIP_LAT = parseFloat("{{ trip.latitude|default:'14.5995' }}");
+    const TRIP_DEST = "{{ trip.destination|escapejs }}";
+    const TRIP_INTERESTS = [{% for i in trip.interests %}"{{ i|escapejs }}"{% if not forloop.last %},{% endif %}{% endfor %}];
+    const HAS_SERVER_SPOTS = {{ recommended_spots|yesno:"true,false" }};
+
+    // Recommended spots data for map pins
+    const SPOTS = [
+        {% for group in recommended_spots %}
+            {% for spot in group.spots %}
+                {% if spot.lat and spot.lon %}
+                { name: "{{ spot.name|escapejs }}", type: "{{ spot.type|escapejs }}", category: "{{ group.category }}", lat: {{ spot.lat }}, lon: {{ spot.lon }} },
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+    ];
+
+    let mainMap = null;
+    let spotPopups = [];
+
+    // ---- Tab switching ----
+    let spotsFetched = HAS_SERVER_SPOTS;
+    function switchTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        if (btn) btn.classList.add('active');
+        if (tabId === 'recommended' && mainMap) mainMap.resize();
+        // Fetch spots on first visit to the tab if server didn't provide them
+        if (tabId === 'recommended' && !spotsFetched) {
+            spotsFetched = true;
+            fetchSpotsClientSide();
+        }
+    }
+
+    // ---- Accordion toggle ----
+    function toggleDay(header) {
+        const body = header.nextElementSibling;
+        const chevron = header.querySelector('.day-chevron');
+        const isOpen = body.classList.toggle('open');
+        chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+    }
+
+    // ---- Map style switcher ----
+    function setMapStyle(style, btn) {
+        if (!mainMap) return;
+        mainMap.setStyle('mapbox://styles/mapbox/' + style);
+        // Re-add terrain after style change
+        mainMap.once('style.load', () => {
+            addTerrain();
+            addSpotMarkers();
+        });
+        document.querySelectorAll('.map-style-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    // ---- Add 3D terrain ----
+    function addTerrain() {
+        try {
+            if (!mainMap.getSource('mapbox-dem')) {
+                mainMap.addSource('mapbox-dem', {
+                    type: 'raster-dem',
+                    url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+                    tileSize: 512,
+                    maxzoom: 14
+                });
+            }
+            mainMap.setTerrain({ source: 'mapbox-dem', exaggeration: 1.4 });
+            mainMap.setFog({ color: 'rgb(220,239,255)', 'high-color': 'rgb(36,92,223)', 'horizon-blend': 0.02 });
+        } catch(e) { /* terrain not supported on all styles */ }
+    }
+
+    // ---- Add spot markers to map ----
+    function addSpotMarkers() {
+        if (!mainMap || !SPOTS.length) return;
+        SPOTS.forEach(spot => {
+            const el = document.createElement('div');
+            el.style.cssText = 'width:10px;height:10px;background:#f5576c;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);cursor:pointer;';
+            const popup = new mapboxgl.Popup({ offset: 12, closeButton: false })
+                .setHTML(`<strong>${spot.name}</strong><span>${spot.type} · ${spot.category}</span>`);
+            new mapboxgl.Marker(el)
+                .setLngLat([spot.lon, spot.lat])
+                .setPopup(popup)
+                .addTo(mainMap);
+        });
+    }
+
+    // ---- Fly to a spot when card is clicked ----
+    function flyToSpot(lat, lon, name, type) {
+        if (!mainMap || !lat || !lon) return;
+        // Scroll to map
+        document.getElementById('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            mainMap.flyTo({ center: [lon, lat], zoom: 16, pitch: 45, bearing: 20, speed: 0.9, curve: 1.4 });
+            new mapboxgl.Popup({ offset: 25, closeOnClick: true })
+                .setLngLat([lon, lat])
+                .setHTML(`<strong>${name}</strong><span>${type}</span>`)
+                .addTo(mainMap);
+        }, 400);
+        // Highlight card
+        document.querySelectorAll('.rec-spot-card').forEach(c => c.classList.remove('highlighted'));
+        event.currentTarget.classList.add('highlighted');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Open first day
+        const firstHeader = document.querySelector('.day-header');
+        if (firstHeader) {
+            firstHeader.nextElementSibling.classList.add('open');
+            firstHeader.querySelector('.day-chevron').style.transform = 'rotate(180deg)';
+        }
+
+        // ---- Main Mapbox Map ----
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        mainMap = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [TRIP_LNG, TRIP_LAT],
+            zoom: 4,         // start zoomed out for flyTo effect
+            pitch: 50,       // 3D tilt
+            bearing: -10,
+        });
+
+        mainMap.addControl(new mapboxgl.NavigationControl());
+        mainMap.addControl(new mapboxgl.FullscreenControl());
+        mainMap.addControl(new mapboxgl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+        // FlyTo on load — cinematic entrance
+        mainMap.on('load', () => {
+            addTerrain();
+            addSpotMarkers();
+
+            // Main destination marker
+            new mapboxgl.Marker({ color: '#00A99D', scale: 1.2 })
+                .setLngLat([TRIP_LNG, TRIP_LAT])
+                .setPopup(new mapboxgl.Popup({ offset: 28 }).setHTML(`<strong>📍 ${TRIP_DEST}</strong>`))
+                .addTo(mainMap)
+                .togglePopup();
+
+            // Cinematic fly in
+            setTimeout(() => {
+                mainMap.flyTo({
+                    center: [TRIP_LNG, TRIP_LAT],
+                    zoom: 12,
+                    pitch: 55,
+                    bearing: 15,
+                    speed: 0.55,
+                    curve: 1.5,
+                    easing: t => t < 0.5 ? 2*t*t : -1+(4-2*t)*t
+                });
+            }, 300);
+        });
+
+        // ---- Small sidebar map (static, outdoors style) ----
+        const mapSmall = new mapboxgl.Map({
+            container: 'map-small',
+            style: 'mapbox://styles/mapbox/outdoors-v12',
+            center: [TRIP_LNG, TRIP_LAT],
+            zoom: 9,
+            pitch: 30,
+            interactive: false
+        });
+        mapSmall.on('load', () => {
+            new mapboxgl.Marker({ color: '#00A99D' })
+                .setLngLat([TRIP_LNG, TRIP_LAT])
+                .addTo(mapSmall);
+        });
+    });
+
+    // ---- Render day dynamically ----
+    function renderDay(d) {
+        const container = document.getElementById('days-container');
+        if (!container) return;
+        const block = document.createElement('div');
+        block.className = 'day-block';
+        const periods = [
+            { key: 'morning', icon: '🌅', color: '#fff8e1', label: 'Morning' },
+            { key: 'afternoon', icon: '☀️', color: '#fff3e0', label: 'Afternoon' },
+            { key: 'evening', icon: '🌙', color: '#ede7f6', label: 'Evening' },
+        ];
+        const periodsHTML = periods.map(p => {
+            const s = d[p.key] || {};
+            if (!s.activity) return '';
+            return `<div class="period-block">
+                <div class="period-icon" style="background:${p.color}">${p.icon}</div>
+                <div class="period-info">
+                    <div class="period-label">${p.label}</div>
+                    <div class="period-activity">${s.activity}</div>
+                    <div class="period-desc">${s.description || ''}</div>
+                    <div class="period-meta">
+                        ${s.duration ? `<span>⏱ ${s.duration}</span>` : ''}
+                        ${s.cost ? `<span>💵 ${s.cost}</span>` : ''}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+        const tipHTML = d.local_tip ? `<div class="local-tip-box"><strong>💡 Local Tip:</strong> ${d.local_tip}</div>` : '';
+        block.innerHTML = `
+            <div class="day-header" onclick="toggleDay(this)">
+                <div class="day-header-left">
+                    <div class="day-number-badge">D${d.day}</div>
+                    <div class="day-theme">${d.theme || 'Day ' + d.day}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.75rem;">
+                    ${d.estimated_daily_cost ? `<span class="day-cost-badge">~${d.estimated_daily_cost}</span>` : ''}
+                    <span class="day-chevron">▼</span>
+                </div>
+            </div>
+            <div class="day-body">${periodsHTML}${tipHTML}</div>
+        `;
+        container.appendChild(block);
+    }
+
+    // ---- Fetch recommended spots client-side (fallback) ----
+    const CATEGORY_ICONS = { Food:'🍽️', Nature:'🌿', History:'🏛️', Beaches:'🏖️', Nightlife:'🎵', Shopping:'🛍️', Photography:'📸', Architecture:'🏗️', Adventure:'🧗', Art:'🎨', Wellness:'🧘', Markets:'🛒' };
+
+    async function fetchSpotsClientSide() {
+        const container = document.getElementById('rec-spots-container');
+        if (!container || HAS_SERVER_SPOTS) return;
+        let allHTML = '';
+        let newSpots = [];
+        for (const cat of TRIP_INTERESTS.slice(0, 5)) {
+            try {
+                const resp = await fetch(`/api/spots/?destination=${encodeURIComponent(TRIP_DEST)}&category=${encodeURIComponent(cat)}`);
+                const data = await resp.json();
+                if (data.spots && data.spots.length) {
+                    const icon = CATEGORY_ICONS[cat] || '📍';
+                    let cardsHTML = '';
+                    data.spots.forEach(s => {
+                        newSpots.push({ name: s.name, type: s.type, category: cat, lat: s.lat, lon: s.lon });
+                        const latVal = s.lat || 'null';
+                        const lonVal = s.lon || 'null';
+                        const nameEsc = s.name.replace(/'/g, "\\'");
+                        const typeEsc = s.type.replace(/'/g, "\\'");
+                        cardsHTML += `
+                            <div class="rec-spot-card" onclick="flyToSpot(${latVal}, ${lonVal}, '${nameEsc}', '${typeEsc}')">
+                                <p class="rec-spot-name">${s.name}</p>
+                                <span class="rec-spot-type">${s.type}</span>
+                                ${s.rating ? `<span class="rec-spot-rating">${s.rating} ★</span>` : ''}
+                                ${s.lat && s.lon ? '<span class="rec-spot-map">📍 View on map</span>' : ''}
+                            </div>`;
+                    });
+                    allHTML += `<div class="rec-category"><div class="rec-category-title">${icon} ${cat}</div><div class="rec-spots-grid">${cardsHTML}</div></div>`;
+                }
+            } catch (e) { /* skip failed category */ }
+        }
+        container.innerHTML = allHTML || '<p style="color:#888;text-align:center;padding:2rem;">No spots found for this destination.</p>';
+        // Add new spots to map
+        newSpots.forEach(s => {
+            if (s.lat && s.lon) {
+                SPOTS.push(s);
+                if (mainMap) {
+                    const el = document.createElement('div');
+                    el.style.cssText = 'width:10px;height:10px;background:#f5576c;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.3);cursor:pointer;';
+                    const popup = new mapboxgl.Popup({ offset: 12, closeButton: false })
+                        .setHTML(`<strong>${s.name}</strong><span>${s.type} · ${s.category}</span>`);
+                    new mapboxgl.Marker(el).setLngLat([s.lon, s.lat]).setPopup(popup).addTo(mainMap);
+                }
+            }
+        });
+    }
+
+    // ---- Generate itinerary ----
+    async function startGenerate() {
+        ['itinerary-empty','itinerary-loaded','itinerary-error'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+        document.getElementById('itinerary-loading').style.display = 'block';
+        const msgs = ['Crafting your itinerary…','Researching local spots…','Structuring your days…','Adding local tips…','Almost ready…'];
+        let mi = 0;
+        const msgEl = document.getElementById('loading-msg');
+        const interval = setInterval(() => { mi = (mi + 1) % msgs.length; msgEl.textContent = msgs[mi]; }, 3500);
+        try {
+            const res = await fetch(GENERATE_URL, { method: 'POST', headers: { 'X-CSRFToken': CSRF, 'Content-Type': 'application/json' } });
+            const data = await res.json();
+            clearInterval(interval);
+            if (!res.ok || data.error) {
+                document.getElementById('itinerary-loading').style.display = 'none';
+                const errEl = document.getElementById('itinerary-error');
+                errEl.textContent = '⚠️ ' + (data.error || 'Something went wrong.');
+                errEl.style.display = 'block';
+                return;
+            }
+            document.getElementById('itinerary-loading').style.display = 'none';
+            const tab = document.getElementById('itinerary');
+            tab.innerHTML = `
+                <div id="itinerary-loaded">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                        <h3 style="margin:0;">Your Itinerary</h3>
+                        <button onclick="startGenerate()" class="btn btn-outline btn-sm" style="border:1px solid var(--border);font-size:0.85rem;">🔄 Regenerate</button>
+                    </div>
+                    <div id="days-container"></div>
+                </div>
+                <div id="itinerary-loading" style="display:none;text-align:center;padding:3rem 1rem;">
+                    <div style="display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:1rem;"></div>
+                    <p style="color:#888;font-size:0.95rem;" id="loading-msg">Generating your itinerary…</p>
+                </div>
+                <div id="itinerary-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:1rem 1.25rem;margin-top:1rem;color:#dc2626;font-size:0.9rem;"></div>
+            `;
+            data.days.forEach((d, i) => { renderDay(d); if (i === 0) { const h = document.querySelector('.day-header'); if (h) toggleDay(h); } });
+        } catch (err) {
+            clearInterval(interval);
+            document.getElementById('itinerary-loading').style.display = 'none';
+            document.getElementById('itinerary-error').textContent = '⚠️ Network error. Please try again.';
+            document.getElementById('itinerary-error').style.display = 'block';
+        }
+    }
+</script>
+{% endblock %}

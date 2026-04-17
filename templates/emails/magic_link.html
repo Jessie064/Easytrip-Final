@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Easytrip Login Link</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Inter',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#00A99D,#007a72);padding:36px 40px;text-align:center;">
+                            <p style="margin:0 0 6px;font-size:2rem;">🔐</p>
+                            <h1 style="margin:0;font-size:1.5rem;color:#fff;font-weight:700;">Easytrip</h1>
+                            <p style="margin:6px 0 0;font-size:0.85rem;color:rgba(255,255,255,0.8);">Secure Login Link</p>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding:36px 40px 28px;">
+                            <h2 style="margin:0 0 12px;font-size:1.3rem;color:#1a1a2e;">Hi {{ user.username }} 👋</h2>
+                            <p style="margin:0 0 24px;font-size:0.95rem;color:#555;line-height:1.7;">
+                                You requested a login link for your Easytrip account. Click the button below to sign in instantly — no password needed.
+                            </p>
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding:8px 0 28px;">
+                                        <a href="{{ magic_url }}"
+                                            style="display:inline-block;background:#00A99D;color:#ffffff;text-decoration:none;padding:15px 40px;border-radius:30px;font-size:1rem;font-weight:700;letter-spacing:0.2px;">
+                                            ✅ Click to Sign In
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Warning box -->
+                            <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
+                                <p style="margin:0 0 8px;font-size:0.85rem;color:#1a1a2e;font-weight:700;">⚠️ Important</p>
+                                <p style="margin:0 0 6px;font-size:0.82rem;color:#666;">• This link expires in <strong>15 minutes</strong></p>
+                                <p style="margin:0 0 6px;font-size:0.82rem;color:#666;">• It can only be used <strong>once</strong></p>
+                                <p style="margin:0;font-size:0.82rem;color:#666;">• If you didn't request this, you can safely ignore this email</p>
+                            </div>
+
+                            <!-- Fallback link -->
+                            <p style="font-size:0.78rem;color:#aaa;word-break:break-all;">
+                                If the button doesn't work, copy and paste this link into your browser:<br>
+                                <a href="{{ magic_url }}" style="color:#00A99D;">{{ magic_url }}</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center;">
+                            <p style="margin:0 0 4px;font-size:0.88rem;color:#1a1a2e;font-weight:600;">✈️ Easytrip</p>
+                            <p style="margin:0;font-size:0.75rem;color:#c4c4c4;">
+                                You're receiving this because a login was requested for your account.<br>
+                                &copy; {% now "Y" %} Easytrip by Pepito.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

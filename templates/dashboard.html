@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Easytrip{% endblock %}
+
+{% block content %}
+<div style="max-width:1200px;margin:0 auto;padding:4rem 2rem;">
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:3rem;border-bottom:1px solid var(--border);padding-bottom:2rem;">
+        <div>
+            <h1 style="font-size:2.5rem;margin-bottom:0.5rem;">My Dashboard</h1>
+            <p style="color:var(--text-muted);font-size:1.1rem;">Manage your saved itineraries and plan new adventures.</p>
+        </div>
+        <a href="{% url 'home' %}#create-trip" class="btn btn-primary dark-green-btn" style="padding:12px 24px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:text-bottom;margin-right:8px;">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Create New Trip
+        </a>
+    </div>
+
+    <!-- Trips Grid -->
+    <div>
+        {% if trips %}
+        <h2 style="font-size:1.5rem;margin-bottom:1.5rem;">All Saved Trips ({{ trips.count }})</h2>
+        <div class="trips-grid">
+            {% for trip in trips %}
+            <div class="trip-card" style="position:relative;cursor:pointer;">
+                <!-- Card click area -->
+                <div onclick="window.location.href='{% url 'trip_detail' trip.id %}'" style="display:block;height:100%;cursor:pointer;">
+                    <img src="{{ trip.image_url|default:'https://images.unsplash.com/photo-1559511260-66a654ae982a?auto=format&fit=crop&q=80&w=800' }}" alt="{{ trip.destination }}">
+                    <div class="trip-card-overlay">
+                        <h4>{{ trip.title }}</h4>
+                        <p>{{ trip.overview|truncatechars:100 }}</p>
+                        <div class="trip-meta">
+                            <span>📅 {{ trip.start_date|date:"F j, Y"|default:"TBD" }}</span>
+                            <span>👥 {{ trip.group_size|default:"Travelers" }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Delete Button — completely separate from card -->
+                <div style="position:absolute;top:12px;right:12px;z-index:500;">
+                    <button
+                        type="button"
+                        data-url="{% url 'delete_trip' trip.id %}"
+                        data-name="{{ trip.title|escapejs }}"
+                        class="delete-btn"
+                        style="background:rgba(0,0,0,0.6);color:white;border:2px solid rgba(255,255,255,0.2);border-radius:50%;width:36px;height:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;"
+                        title="Delete Trip">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:4rem;background:var(--card-bg);border-radius:16px;border:1px dashed var(--border);">
+            <div style="width:64px;height:64px;margin:0 auto 1.5rem;background:var(--bg);color:#888;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+            </div>
+            <h3 style="margin-bottom:0.5rem;">No trips yet!</h3>
+            <p style="color:var(--text-muted);margin-bottom:1.5rem;">You haven't planned any adventures yet.</p>
+            <a href="{% url 'home' %}#create-trip" class="btn btn-outline" style="border:1px solid var(--border);padding:10px 24px;border-radius:20px;text-decoration:none;color:var(--text);">Plan a Trip</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- ===== Custom Delete Modal ===== -->
+<div id="delete-modal" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;">
+    <div id="modal-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);opacity:0;transition:opacity 0.25s ease;"></div>
+    <div id="modal-card" style="position:relative;background:var(--card-bg);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,0.3);transform:scale(0.85) translateY(20px);opacity:0;transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);">
+        <div style="width:60px;height:60px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+        </div>
+        <h3 style="text-align:center;font-size:1.3rem;margin-bottom:0.5rem;">Delete Trip</h3>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.92rem;margin-bottom:0.5rem;">Are you sure you want to delete</p>
+        <p id="modal-trip-name" style="text-align:center;font-weight:700;color:var(--primary);font-size:1rem;margin-bottom:1.5rem;"></p>
+        <p style="text-align:center;color:var(--text-muted);font-size:0.82rem;margin-bottom:1.75rem;">This action cannot be undone. All itinerary data will be permanently removed.</p>
+        <div style="display:flex;gap:0.75rem;">
+            <button id="modal-cancel-btn" type="button" class="btn btn-outline" style="flex:1;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-size:0.95rem;">
+                Cancel
+            </button>
+            <button id="modal-confirm-btn" type="button" class="btn" style="flex:1;padding:12px;background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;border-radius:12px;font-size:0.95rem;display:flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Delete Trip
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    #delete-modal { display: none; }
+    #delete-modal.active { display: flex !important; position: fixed !important; inset: 0 !important; z-index: 99999 !important; align-items: center !important; justify-content: center !important; }
+    #delete-modal.animate-in #modal-backdrop { opacity: 1 !important; }
+    #delete-modal.animate-in #modal-card { transform: scale(1) translateY(0) !important; opacity: 1 !important; }
+    .delete-btn:hover { background: rgba(220,53,69,1) !important; border-color: rgba(255,255,255,0.5) !important; }
+</style>
+
+<script>
+    // Attach delete button listeners after DOM loads
+    document.addEventListener('DOMContentLoaded', function () {
+        let deleteUrl = '';
+        const modal = document.getElementById('delete-modal');
+        const tripNameEl = document.getElementById('modal-trip-name');
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const backdrop = document.getElementById('modal-backdrop');
+
+        // Attach to all delete buttons
+        document.querySelectorAll('.delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                e.preventDefault();
+                deleteUrl = this.getAttribute('data-url');
+                tripNameEl.textContent = '"' + this.getAttribute('data-name') + '"';
+                // Force show modal
+                modal.style.display = 'flex';
+                modal.style.position = 'fixed';
+                modal.style.inset = '0';
+                modal.style.zIndex = '99999';
+                modal.style.alignItems = 'center';
+                modal.style.justifyContent = 'center';
+                modal.classList.add('active');
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        modal.classList.add('animate-in');
+                    });
+                });
+            });
+        });
+
+        // Confirm delete
+        confirmBtn.addEventListener('click', function () {
+            if (deleteUrl) window.location.href = deleteUrl;
+        });
+
+        // Cancel
+        function closeModal() {
+            modal.classList.remove('animate-in');
+            setTimeout(function () {
+                modal.classList.remove('active');
+                // Force hide modal and reset inline styles
+                modal.style.display = 'none';
+                modal.style.position = '';
+                modal.style.inset = '';
+                modal.style.zIndex = '';
+                modal.style.alignItems = '';
+                modal.style.justifyContent = '';
+            }, 300);
+        }
+        cancelBtn.addEventListener('click', closeModal);
+        backdrop.addEventListener('click', closeModal);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeModal();
+        });
+    });
+</script>
+
+{% endblock %}

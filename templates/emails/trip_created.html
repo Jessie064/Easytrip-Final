@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Easytrip Itinerary is Ready!</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Inter',Arial,sans-serif;">
+
+    <!-- Wrapper -->
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#00A99D,#007a72);padding:40px 40px 32px;text-align:center;">
+                            <p style="margin:0 0 8px;font-size:2rem;">✈️</p>
+                            <h1 style="margin:0;font-size:1.6rem;color:#ffffff;font-weight:700;letter-spacing:-0.3px;">Easytrip</h1>
+                            <p style="margin:8px 0 0;font-size:0.9rem;color:rgba(255,255,255,0.8);">AI-Powered Travel Planning</p>
+                        </td>
+                    </tr>
+
+                    <!-- Hero Banner -->
+                    {% if trip.image_url %}
+                    <tr>
+                        <td style="padding:0;">
+                            <img src="{{ trip.image_url }}" alt="{{ trip.destination }}"
+                                style="width:100%;height:200px;object-fit:cover;display:block;">
+                        </td>
+                    </tr>
+                    {% endif %}
+
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="padding:36px 40px 24px;">
+                            <p style="margin:0 0 6px;font-size:0.85rem;color:#00A99D;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Trip Confirmed 🎉</p>
+                            <h2 style="margin:0 0 16px;font-size:1.5rem;color:#1a1a2e;font-weight:700;">
+                                Your itinerary for <span style="color:#00A99D;">{{ trip.destination }}</span> is ready!
+                            </h2>
+                            <p style="margin:0 0 24px;font-size:0.95rem;color:#555;line-height:1.7;">
+                                Hi <strong>{{ user.username }}</strong>, your trip has been successfully created. Here's a summary of your upcoming adventure:
+                            </p>
+
+                            <!-- Trip Details Card -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:28px;">
+                                <tr>
+                                    <td style="padding:24px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td width="50%" style="padding-bottom:16px;vertical-align:top;">
+                                                    <p style="margin:0 0 4px;font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Destination</p>
+                                                    <p style="margin:0;font-size:1rem;color:#1a1a2e;font-weight:600;">📍 {{ trip.destination }}</p>
+                                                </td>
+                                                <td width="50%" style="padding-bottom:16px;vertical-align:top;">
+                                                    <p style="margin:0 0 4px;font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Trip Length</p>
+                                                    <p style="margin:0;font-size:1rem;color:#1a1a2e;font-weight:600;">📅 {{ trip.trip_length }} day{{ trip.trip_length|pluralize }}</p>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td width="50%" style="padding-bottom:8px;vertical-align:top;">
+                                                    <p style="margin:0 0 4px;font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Group Size</p>
+                                                    <p style="margin:0;font-size:1rem;color:#1a1a2e;font-weight:600;">👥 {{ trip.group_size|default:"Not specified" }}</p>
+                                                </td>
+                                                <td width="50%" style="padding-bottom:8px;vertical-align:top;">
+                                                    <p style="margin:0 0 4px;font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Dates</p>
+                                                    <p style="margin:0;font-size:1rem;color:#1a1a2e;font-weight:600;">
+                                                        {% if trip.start_date and trip.end_date %}
+                                                            🗓 {{ trip.start_date|date:"M d" }} – {{ trip.end_date|date:"M d, Y" }}
+                                                        {% else %}
+                                                            🗓 Flexible dates
+                                                        {% endif %}
+                                                    </p>
+                                                </td>
+                                            </tr>
+                                            {% if trip.budget_total %}
+                                            <tr>
+                                                <td colspan="2" style="padding-top:8px;border-top:1px solid #e5e7eb;">
+                                                    <p style="margin:8px 0 4px;font-size:0.75rem;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;">Budget</p>
+                                                    <p style="margin:0;font-size:1rem;color:#1a1a2e;font-weight:600;">💰 {{ trip.budget_currency }} {{ trip.budget_total|floatformat:0 }}</p>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Interests -->
+                            {% if trip.interests %}
+                            <p style="margin:0 0 10px;font-size:0.85rem;color:#555;font-weight:600;">Your interests:</p>
+                            <p style="margin:0 0 28px;">
+                                {% for interest in trip.interests %}
+                                <span style="display:inline-block;background:#e6f7f6;color:#00A99D;border-radius:20px;padding:4px 12px;font-size:0.8rem;font-weight:600;margin:3px;">{{ interest }}</span>
+                                {% endfor %}
+                            </p>
+                            {% endif %}
+
+                            <!-- Overview -->
+                            {% if trip.overview %}
+                            <div style="background:#f0fdf9;border-left:4px solid #00A99D;border-radius:0 8px 8px 0;padding:16px 20px;margin-bottom:28px;">
+                                <p style="margin:0 0 6px;font-size:0.8rem;color:#00A99D;font-weight:700;text-transform:uppercase;letter-spacing:0.4px;">About your destination</p>
+                                <p style="margin:0;font-size:0.88rem;color:#444;line-height:1.7;">{{ trip.overview|truncatechars:300 }}</p>
+                            </div>
+                            {% endif %}
+
+                            <!-- CTA Button -->
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td align="center" style="padding:8px 0 32px;">
+                                        <a href="{{ site_url }}/trip/{{ trip.id }}/"
+                                            style="display:inline-block;background:#00A99D;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:30px;font-size:1rem;font-weight:700;letter-spacing:0.2px;">
+                                            View My Itinerary →
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Next Steps -->
+                            <table width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:8px;">
+                                <tr>
+                                    <td style="padding:20px 24px;">
+                                        <p style="margin:0 0 12px;font-size:0.88rem;color:#1a1a2e;font-weight:700;">🚀 What's next?</p>
+                                        <p style="margin:0 0 8px;font-size:0.85rem;color:#555;">✅ &nbsp;Open your trip and click <strong>"Generate My Itinerary"</strong> to get an AI-powered day-by-day plan</p>
+                                        <p style="margin:0 0 8px;font-size:0.85rem;color:#555;">🗺️ &nbsp;Explore the interactive map to discover your destination</p>
+                                        <p style="margin:0;font-size:0.85rem;color:#555;">📍 &nbsp;Check out recommended spots based on your interests</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:24px 40px;text-align:center;">
+                            <p style="margin:0 0 6px;font-size:1rem;">✈️ <strong style="color:#1a1a2e;">Easytrip</strong></p>
+                            <p style="margin:0 0 12px;font-size:0.8rem;color:#9ca3af;">AI-Powered Travel Planning · Free Forever</p>
+                            <p style="margin:0;font-size:0.75rem;color:#c4c4c4;">
+                                You received this email because you created a trip on Easytrip.<br>
+                                &copy; {% now "Y" %} Easytrip by Pepito. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

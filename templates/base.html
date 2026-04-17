@@ -18,6 +18,7 @@
     <div id="scroll-progress"></div>
 
     <!-- Navigation Bar -->
+    {% if not user.is_staff %}
     <nav class="navbar">
         <div class="nav-container">
             <!-- Logo -->
@@ -57,7 +58,11 @@
                     <div class="nav-avatar">{{ user.username|slice:":1"|upper }}</div>
                     <span class="nav-username">{{ user.username }}</span>
                 </div>
+                {% if user.is_staff %}
+                <a href="{% url 'monitor_dashboard' %}" class="btn btn-primary dark-green-btn btn-sm">Monitoring</a>
+                {% else %}
                 <a href="{% url 'dashboard' %}" class="btn btn-primary dark-green-btn btn-sm">Dashboard</a>
+                {% endif %}
                 <a href="{% url 'logout' %}" class="btn btn-ghost btn-sm">Log Out</a>
                 {% else %}
                 <a href="{% url 'login' %}" class="btn btn-ghost btn-sm">Log In</a>
@@ -71,6 +76,7 @@
             </button>
         </div>
     </nav>
+    {% endif %}
 
     <!-- Main Content -->
     <main>

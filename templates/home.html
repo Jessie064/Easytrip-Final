@@ -15,6 +15,7 @@
         <p>Generate complete, day-by-day itineraries tailored to your interests in seconds. Free, forever.</p>
 
         <!-- Quick Search Bar -->
+        {% if not user.is_staff %}
         <div class="hero-search-bar">
             <div class="search-input-wrap">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-icon">
@@ -29,6 +30,7 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
             </button>
         </div>
+        {% endif %}
 
         <!-- Quick Stats -->
         <div class="hero-stats">
@@ -123,6 +125,7 @@
 </section>
 
 <!-- ===== TRIP FORM ===== -->
+{% if not user.is_staff %}
 <section id="create-trip" class="form-section fade-in-section">
     <div class="section-inner">
         <div class="section-header">
@@ -281,6 +284,7 @@
         </div>
     </div>
 </section>
+{% endif %}
 
 <!-- ===== MY TRIPS ===== -->
 {% if user.is_authenticated and recent_trips %}

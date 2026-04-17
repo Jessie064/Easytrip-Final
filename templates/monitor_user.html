@@ -19,7 +19,10 @@
             {% if profile_user.is_staff %}<span class="role-badge staff" style="font-size:0.78rem;padding:3px 10px;">Staff</span>{% endif %}
             {% if profile_user.is_superuser %}<span class="role-badge super" style="font-size:0.78rem;padding:3px 10px;">Superuser</span>{% endif %}
         </div>
-        <a href="{% url 'monitor_dashboard' %}" class="btn btn-outline btn-sm">Back to Monitor</a>
+        <div style="display:flex;gap:0.75rem;align-items:center;">
+            <a href="{% url 'monitor_dashboard' %}" class="btn btn-outline btn-sm">Back to Monitor</a>
+            <a href="{% url 'logout' %}" class="btn btn-primary dark-green-btn btn-sm">Log Out</a>
+        </div>
     </div>
 
     <!-- User Info Cards -->

@@ -178,6 +178,9 @@ def spots_by_category(request):
 
 
 def home(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('monitor_dashboard')
+        
     if request.method == 'POST':
         destination = request.POST.get('destination')
         trip_length = request.POST.get('trip_length', 3)
@@ -368,6 +371,9 @@ def trip_detail(request, trip_id):
 def generate_itinerary(request, trip_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'POST required'}, status=405)
+        
+    if request.user.is_authenticated and request.user.is_staff:
+        return JsonResponse({'error': 'Admins cannot generate plans'}, status=403)
 
     trip = get_object_or_404(Trip, id=trip_id)
 
@@ -549,6 +555,9 @@ def monitor_user_detail(request, user_id):
 
 
 def dashboard(request):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('monitor_dashboard')
+        
     if request.user.is_authenticated:
         trips = Trip.objects.filter(user=request.user).order_by('-created_at')
     else:
@@ -557,6 +566,9 @@ def dashboard(request):
 
 
 def delete_trip(request, trip_id):
+    if request.user.is_authenticated and request.user.is_staff:
+        return redirect('monitor_dashboard')
+        
     trip = get_object_or_404(Trip, id=trip_id)
     if trip.user == request.user or trip.user is None:
         trip.delete()
@@ -590,6 +602,8 @@ def login_view(request):
             cache.delete(attempt_key)
             cache.delete(lock_key)
             login(request, user)
+            if user.is_staff:
+                return redirect('monitor_dashboard')
             return redirect(request.GET.get('next', 'home'))
         else:
             attempts = cache.get(attempt_key, 0) + 1
@@ -695,6 +709,9 @@ def verify_magic_link(request, token):
     user = login_token.user
     user.backend = 'django.contrib.auth.backends.ModelBackend'
     login(request, user)
+    
+    if user.is_staff:
+        return redirect('monitor_dashboard')
 
     return redirect('home')
 

@@ -157,7 +157,9 @@
                 <div id="itinerary-loaded">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
                         <h3 style="margin:0;">Your Itinerary</h3>
+                        {% if not user.is_staff %}
                         <button onclick="startGenerate()" class="btn btn-outline btn-sm" style="border:1px solid var(--border);font-size:0.85rem;">🔄 Regenerate</button>
+                        {% endif %}
                     </div>
                     <div id="days-container">
                         {% for day in parsed_days %}{% if day %}
@@ -214,7 +216,9 @@
                     <div style="font-size:3rem;margin-bottom:1rem;">🗓️</div>
                     <h3 style="margin-bottom:0.5rem;">No itinerary yet</h3>
                     <p style="color:#888;margin-bottom:1.5rem;">Let AI build a personalised day-by-day plan for <strong>{{ trip.destination }}</strong>.</p>
+                    {% if not user.is_staff %}
                     <button onclick="startGenerate()" class="btn btn-primary dark-green-btn" style="padding:12px 28px;">✨ Generate My Itinerary</button>
+                    {% endif %}
                 </div>
                 {% endif %}
                 <div id="itinerary-loading" style="display:none;text-align:center;padding:3rem 1rem;">
@@ -590,7 +594,9 @@
                 <div id="itinerary-loaded">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
                         <h3 style="margin:0;">Your Itinerary</h3>
+                        {% if not user.is_staff %}
                         <button onclick="startGenerate()" class="btn btn-outline btn-sm" style="border:1px solid var(--border);font-size:0.85rem;">🔄 Regenerate</button>
+                        {% endif %}
                     </div>
                     <div id="days-container"></div>
                 </div>
